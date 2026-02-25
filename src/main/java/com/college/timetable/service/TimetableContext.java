@@ -3,6 +3,7 @@ package com.college.timetable.service;
 import com.college.timetable.model.*;
 
 import java.util.List;
+import java.util.ArrayList;
 
 public class TimetableContext {
 
@@ -10,6 +11,9 @@ public class TimetableContext {
     private List<Faculty> faculties;
     private List<Subject> subjects;
     private List<Slot> allSlots;
+
+    // 🔥 NEW: Store generated timetable slots
+    private List<TimetableSlot> timetableSlots = new ArrayList<>();
 
     public TimetableContext(List<Division> divisions,
                             List<Faculty> faculties,
@@ -35,5 +39,15 @@ public class TimetableContext {
 
     public List<Slot> getAllSlots() {
         return allSlots;
+    }
+
+    // ✅ NEW Getter
+    public List<TimetableSlot> getTimetableSlots() {
+        return timetableSlots;
+    }
+
+    // ✅ NEW Setter
+    public void setTimetableSlots(List<TimetableSlot> timetableSlots) {
+        this.timetableSlots = timetableSlots;
     }
 }

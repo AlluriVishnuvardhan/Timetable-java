@@ -5,6 +5,9 @@ import com.college.timetable.scheduler.stage.LabSchedulingStage;
 import com.college.timetable.scheduler.stage.TheorySchedulingStage;
 import com.college.timetable.scheduler.stage.ValidationStage;
 import com.college.timetable.config.SlotConfig;
+import com.college.timetable.model.TimetableSlot;
+
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -29,12 +32,15 @@ public class TimetableService {
         this.slotConfig = slotConfig;
     }
 
-    public void generateTimetable(TimetableContext context) {
+    public List<TimetableSlot> generateTimetable(TimetableContext context) {
 
         pipeline.addStage(labStage);
         pipeline.addStage(theoryStage);
         pipeline.addStage(validationStage);
 
         pipeline.execute(context);
+
+        // ✅ RETURN GENERATED TIMETABLE
+        return context.getTimetableSlots();
     }
 }

@@ -14,6 +14,7 @@ com\college\timetable\model\Division.class
 com\college\timetable\model\Slot.class
 com\college\timetable\scheduler\service\SlotAllocationService.class
 com\college\timetable\scheduler\stage\LabSchedulingStage.class
+com\college\timetable\TimetableApplication.class
 com\college\timetable\scheduler\stage\TheorySchedulingStage.class
 com\college\timetable\config\SlotConfig.class
 com\college\timetable\service\TimetableService.class
