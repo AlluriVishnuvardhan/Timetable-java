@@ -4,7 +4,6 @@ import com.college.timetable.scheduler.pipeline.SchedulingPipeline;
 import com.college.timetable.scheduler.stage.LabSchedulingStage;
 import com.college.timetable.scheduler.stage.TheorySchedulingStage;
 import com.college.timetable.scheduler.stage.ValidationStage;
-import com.college.timetable.config.SlotConfig;
 import com.college.timetable.model.TimetableSlot;
 
 import java.util.List;
@@ -18,18 +17,15 @@ public class TimetableService {
     private final LabSchedulingStage labStage;
     private final TheorySchedulingStage theoryStage;
     private final ValidationStage validationStage;
-    private final SlotConfig slotConfig;
 
     public TimetableService(SchedulingPipeline pipeline,
                             LabSchedulingStage labStage,
                             TheorySchedulingStage theoryStage,
-                            ValidationStage validationStage,
-                            SlotConfig slotConfig) {
+                            ValidationStage validationStage) {
         this.pipeline = pipeline;
         this.labStage = labStage;
         this.theoryStage = theoryStage;
         this.validationStage = validationStage;
-        this.slotConfig = slotConfig;
     }
 
     public List<TimetableSlot> generateTimetable(TimetableContext context) {
@@ -40,7 +36,6 @@ public class TimetableService {
 
         pipeline.execute(context);
 
-        // ✅ RETURN GENERATED TIMETABLE
         return context.getTimetableSlots();
     }
 }

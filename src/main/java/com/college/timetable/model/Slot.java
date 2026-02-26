@@ -9,9 +9,11 @@ public class Slot {
     private LocalTime startTime;
     private LocalTime endTime;
 
-    public Slot(String day, int slotNumber,
+    public Slot(String day,
+                int slotNumber,
                 LocalTime startTime,
                 LocalTime endTime) {
+
         this.day = day;
         this.slotNumber = slotNumber;
         this.startTime = startTime;

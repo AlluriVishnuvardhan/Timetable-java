@@ -21,7 +21,7 @@ public class Faculty {
 
     public boolean isAvailable(Slot slot) {
         return !occupiedSlots.contains(slot)
-                && shift.isWithinShift(slot);
+                && shift.isWithinShift(slot.getStartTime());
     }
 
     public void occupySlot(Slot slot) {

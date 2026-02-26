@@ -42,6 +42,7 @@ public class LabSchedulingStage implements SchedulingStage {
 
             for (Subject subject : subjects) {
 
+                // 🔥 Only process LAB subjects
                 if (!subject.isLab()) continue;
 
                 boolean allocated = false;
@@ -50,33 +51,40 @@ public class LabSchedulingStage implements SchedulingStage {
 
                     Slot nextSlot = slotConfig.getNextSlot(slot);
 
-                    if (!slotConfig.areContinuous(slot, nextSlot))
+                    // Ensure slots are continuous
+                    if (nextSlot == null || !slotConfig.areContinuous(slot, nextSlot))
                         continue;
 
+                    // Check division free
                     if (!conflictChecker.isDivisionSlotFree(division, slot))
                         continue;
 
                     if (!conflictChecker.isDivisionSlotFree(division, nextSlot))
                         continue;
 
+                    // Find available faculty
                     Faculty availableFaculty =
                             findAvailableFaculty(faculties, slot, nextSlot);
 
                     if (availableFaculty != null) {
 
-                        // LOCK FACULTY FIRST
+                        // 🔥 LOCK FACULTY FIRST
                         facultyAllocationService.allocate(availableFaculty, slot);
                         facultyAllocationService.allocate(availableFaculty, nextSlot);
 
-                        // Assign both slots (no batch logic yet — simplified)
-                        slotAllocationService.allocateLab(
-                                division,
-                                slot,
-                                nextSlot,
-                                subject,
-                                availableFaculty,
-                                "BATCH-ALL"
-                        );
+                        // 🔥 Allocate Lab (Now Returns List<TimetableSlot>)
+                        List<TimetableSlot> labSlots =
+                                slotAllocationService.allocateLab(
+                                        division,
+                                        slot,
+                                        nextSlot,
+                                        subject,
+                                        availableFaculty,
+                                        "BATCH-ALL"
+                                );
+
+                        // 🔥 ADD TO CONTEXT (IMPORTANT FIX)
+                        context.getTimetableSlots().addAll(labSlots);
 
                         allocated = true;
                         break;

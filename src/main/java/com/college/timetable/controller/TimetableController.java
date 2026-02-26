@@ -1,6 +1,7 @@
 package com.college.timetable.controller;
 
 import com.college.timetable.dto.TimetableRequestDTO;
+import com.college.timetable.dto.TimetableResponseDTO;
 import com.college.timetable.model.*;
 import com.college.timetable.service.TimetableContext;
 import com.college.timetable.service.TimetableService;
@@ -24,43 +25,58 @@ public class TimetableController {
         this.slotConfig = slotConfig;
     }
 
-    // ✅ Simple GET endpoint to test in browser
     @GetMapping("/test")
     public String test() {
         return "Automatic Timetable Backend Running Successfully!";
     }
 
-    // ✅ POST endpoint to generate timetable
     @PostMapping("/generate")
-public List<TimetableSlot> generateTimetable(@RequestBody TimetableRequestDTO request) {
+    public List<TimetableResponseDTO> generateTimetable(
+            @RequestBody TimetableRequestDTO request) {
 
-    List<Division> divisions = request.getDivisions().stream()
-            .map(d -> new Division(d.getName()))
-            .collect(Collectors.toList());
+        List<Division> divisions = request.getDivisions().stream()
+                .map(d -> new Division(d.getName()))
+                .collect(Collectors.toList());
 
-    List<Faculty> faculties = request.getFaculties().stream()
-            .map(f -> new Faculty(
-                    f.getId(),
-                    f.getName(),
-                    new Shift(f.getShiftStart(), f.getShiftEnd())
-            ))
-            .collect(Collectors.toList());
+        List<Faculty> faculties = request.getFaculties().stream()
+                .map(f -> new Faculty(
+                        f.getId(),
+                        f.getName(),
+                        new Shift(
+                                f.getShiftStart(),
+                                f.getShiftEnd()
+                        )
+                ))
+                .collect(Collectors.toList());
 
-    List<Subject> subjects = request.getSubjects().stream()
-            .map(s -> new Subject(
-                    s.getName(),
-                    s.isLab(),
-                    s.getWeeklyHours()
-            ))
-            .collect(Collectors.toList());
+        List<Subject> subjects = request.getSubjects().stream()
+                .map(s -> new Subject(
+                        s.getName(),
+                        s.isLab(),
+                        s.getWeeklyHours()
+                ))
+                .collect(Collectors.toList());
 
-    TimetableContext context = new TimetableContext(
-            divisions,
-            faculties,
-            subjects,
-            slotConfig.getAllSlots()
-    );
+        TimetableContext context = new TimetableContext(
+                divisions,
+                faculties,
+                subjects,
+                slotConfig.getAllSlots()
+        );
 
-    return timetableService.generateTimetable(context);
-        }
-}    
+        List<TimetableSlot> slots =
+                timetableService.generateTimetable(context);
+
+        return slots.stream()
+                .map(slot -> new TimetableResponseDTO(
+                        slot.getSubject().getName(),
+                        slot.getFaculty().getName(),
+                        slot.getAssignedSlot().getDay(),
+                        slot.getAssignedSlot().getSlotNumber(),
+                        slot.getAssignedSlot().getStartTime().toString(),
+                        slot.getAssignedSlot().getEndTime().toString(),
+                        slot.getBatchName()
+                ))
+                .collect(Collectors.toList());
+    }
+}
