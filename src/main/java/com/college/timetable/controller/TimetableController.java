@@ -1,5 +1,5 @@
 package com.college.timetable.controller;
-
+import org.springframework.web.multipart.MultipartFile;
 import com.college.timetable.dto.TimetableRequestDTO;
 import com.college.timetable.dto.TimetableResponseDTO;
 import com.college.timetable.model.*;
@@ -29,7 +29,10 @@ public class TimetableController {
     public String test() {
         return "Automatic Timetable Backend Running Successfully!";
     }
-
+    @PostMapping("/upload")
+public List<TimetableSlot> uploadExcel(@RequestParam("file") MultipartFile file) throws Exception {
+    return timetableService.generateFromExcel(file);
+}
     @PostMapping("/generate")
     public List<TimetableResponseDTO> generateTimetable(
             @RequestBody TimetableRequestDTO request) {

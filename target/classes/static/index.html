@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Automatic Timetable Generator</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        button { padding: 10px 20px; font-size: 16px; }
+        table { border-collapse: collapse; margin-top: 30px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+<h2>Automatic Timetable Generator</h2>
+
+<button onclick="generateTimetable()">Generate Timetable</button>
+
+<div id="output"></div>
+
+<script>
+async function generateTimetable() {
+
+    const requestData = {
+        divisions: [{ name: "A" }],
+        faculties: [{
+            id: 1,
+            name: "Dr. Smith",
+            shiftStart: "09:00",
+            shiftEnd: "16:00"
+        }],
+        subjects: [
+            { name: "Math", lab: false, weeklyHours: 4 },
+            { name: "Physics Lab", lab: true, weeklyHours: 2 }
+        ]
+    };
+
+    const response = await fetch("/api/timetable/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData)
+    });
+
+    const data = await response.json();
+
+    displayTimetable(data);
+}
+
+function displayTimetable(slots) {
+
+    let html = "<table>";
+    html += "<tr><th>Subject</th><th>Faculty</th><th>Day</th><th>Slot</th><th>Time</th></tr>";
+
+    slots.forEach(slot => {
+        html += `<tr>
+                    <td>${slot.subject}</td>
+                    <td>${slot.faculty}</td>
+                    <td>${slot.day}</td>
+                    <td>${slot.slotNumber}</td>
+                    <td>${slot.startTime} - ${slot.endTime}</td>
+                 </tr>`;
+    });
+
+    html += "</table>";
+
+    document.getElementById("output").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
