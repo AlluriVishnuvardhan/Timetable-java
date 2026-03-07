@@ -48,11 +48,16 @@ public class LabSchedulingStage implements SchedulingStage {
                 boolean allocated = false;
 
                 for (Slot slot : allSlots) {
+                    if (slotAllocationService.isLunchSlot(slot)) {
+                        continue;
+                    }
 
                     Slot nextSlot = slotConfig.getNextSlot(slot);
 
                     // Ensure slots are continuous
                     if (nextSlot == null || !slotConfig.areContinuous(slot, nextSlot))
+                        continue;
+                    if (slotAllocationService.isLunchSlot(nextSlot))
                         continue;
 
                     // Check division free
@@ -61,6 +66,8 @@ public class LabSchedulingStage implements SchedulingStage {
 
                     if (!conflictChecker.isDivisionSlotFree(division, nextSlot))
                         continue;
+                    if (conflictChecker.divisionDailyLimitReached(division, slot.getDay(), 6))
+                        continue;
 
                     // Find available faculty
                     Faculty availableFaculty =
@@ -68,7 +75,11 @@ public class LabSchedulingStage implements SchedulingStage {
 
                     if (availableFaculty != null) {
 
-                        // 🔥 LOCK FACULTY FIRST
+                        // Check both slots first so we don't partially reserve one slot.
+                        if (!facultyAllocationService.canAllocate(availableFaculty, slot)
+                                || !facultyAllocationService.canAllocate(availableFaculty, nextSlot)) {
+                            continue;
+                        }
                         facultyAllocationService.allocate(availableFaculty, slot);
                         facultyAllocationService.allocate(availableFaculty, nextSlot);
 
@@ -82,6 +93,9 @@ public class LabSchedulingStage implements SchedulingStage {
                                         availableFaculty,
                                         "BATCH-ALL"
                                 );
+                        if (labSlots.isEmpty()) {
+                            continue;
+                        }
 
                         // 🔥 ADD TO CONTEXT (IMPORTANT FIX)
                         context.getTimetableSlots().addAll(labSlots);

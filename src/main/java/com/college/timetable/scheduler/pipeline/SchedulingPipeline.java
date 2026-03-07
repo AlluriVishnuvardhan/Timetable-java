@@ -15,6 +15,10 @@ public class SchedulingPipeline {
         stages.add(stage);
     }
 
+    public void reset() {
+        stages.clear();
+    }
+
     public void execute(TimetableContext context) {
         for (SchedulingStage stage : stages) {
             stage.execute(context);

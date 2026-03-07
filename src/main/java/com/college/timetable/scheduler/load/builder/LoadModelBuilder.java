@@ -43,7 +43,7 @@ public class LoadModelBuilder {
 
             String subject = getString(row.getCell(5));
             String type = getString(row.getCell(6));
-            String semester = getString(row.getCell(7));
+            String semester = normalizeSemester(getString(row.getCell(7)));
             String division = getString(row.getCell(8));
             String divShift = getString(row.getCell(9));
             String theoryClassesStr = getString(row.getCell(11));
@@ -64,12 +64,14 @@ public class LoadModelBuilder {
                             currentFacultyCode,
                             currentFacultyName,
                             year,
+                            semester,
                             division,
                             subject,
                             TaskType.THEORY,
                             false,
                             currentFacultyShift,
                             divShift,
+                            extractBatch(subject),
                             divisionHoliday
                     ));
                 }
@@ -84,12 +86,36 @@ public class LoadModelBuilder {
                             currentFacultyCode,
                             currentFacultyName,
                             year,
+                            semester,
                             division,
                             subject,
                             TaskType.LAB,
                             true,
                             currentFacultyShift,
                             divShift,
+                            extractBatch(subject),
+                            divisionHoliday
+                    ));
+                }
+            }
+
+            if ("Elective".equalsIgnoreCase(type)) {
+
+                int electiveCount = parseInt(theoryClassesStr);
+
+                for (int e = 0; e < electiveCount; e++) {
+                    tasks.add(new SchedulingTask(
+                            currentFacultyCode,
+                            currentFacultyName,
+                            year,
+                            semester,
+                            division,
+                            subject,
+                            TaskType.ELECTIVE,
+                            false,
+                            currentFacultyShift,
+                            divShift,
+                            extractBatch(subject),
                             divisionHoliday
                     ));
                 }
@@ -107,10 +133,26 @@ public class LoadModelBuilder {
 
         tasks.sort((a, b) -> {
             if (a.getType() != b.getType()) {
-                return a.getType() == TaskType.LAB ? -1 : 1;
+                if (a.getType() == TaskType.LAB) return -1;
+                if (b.getType() == TaskType.LAB) return 1;
+                if (a.getType() == TaskType.ELECTIVE) return -1;
+                if (b.getType() == TaskType.ELECTIVE) return 1;
+                return 0;
             }
             return 0;
         });
+    }
+
+    private String extractBatch(String subject) {
+        if (subject == null) return "";
+
+        int left = subject.indexOf('[');
+        int right = subject.indexOf(']');
+
+        if (left >= 0 && right > left) {
+            return subject.substring(left + 1, right).trim();
+        }
+        return "";
     }
 
     private String getString(Cell cell) {
@@ -126,6 +168,26 @@ public class LoadModelBuilder {
         }
     }
 
+    private String normalizeSemester(String semester) {
+        if (semester == null) {
+            return "";
+        }
+        String value = semester.trim();
+        if (value.isEmpty()) {
+            return value;
+        }
+        try {
+            double d = Double.parseDouble(value);
+            int i = (int) d;
+            if (Math.abs(d - i) < 0.00001) {
+                return String.valueOf(i);
+            }
+        } catch (Exception ignored) {
+            // Keep original when not numeric.
+        }
+        return value;
+    }
+
     private Day parseHoliday(String holiday) {
         if (holiday == null) return null;
 
@@ -133,6 +195,18 @@ public class LoadModelBuilder {
             case "MON":
             case "MONDAY":
                 return Day.MONDAY;
+            case "TUE":
+            case "TUESDAY":
+                return Day.TUESDAY;
+            case "WED":
+            case "WEDNESDAY":
+                return Day.WEDNESDAY;
+            case "THU":
+            case "THURSDAY":
+                return Day.THURSDAY;
+            case "FRI":
+            case "FRIDAY":
+                return Day.FRIDAY;
             case "SAT":
             case "SATURDAY":
                 return Day.SATURDAY;

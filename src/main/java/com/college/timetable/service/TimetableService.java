@@ -1,25 +1,27 @@
 package com.college.timetable.service;
 
+import com.college.timetable.scheduler.load.builder.LoadModelBuilder;
+import com.college.timetable.scheduler.load.solver.LoadBacktrackingSolver;
+import com.college.timetable.scheduler.load.core.LoadSchedulingResult;
+import com.college.timetable.scheduler.load.core.SchedulingTask;
+
 import com.college.timetable.scheduler.pipeline.SchedulingPipeline;
 import com.college.timetable.scheduler.stage.LabSchedulingStage;
 import com.college.timetable.scheduler.stage.TheorySchedulingStage;
 import com.college.timetable.scheduler.stage.ValidationStage;
-import com.college.timetable.dto.TimetableRequestDTO;
-import com.college.timetable.model.Division;
-import com.college.timetable.model.Faculty;
-import com.college.timetable.model.Shift;
-import com.college.timetable.model.TimetableSlot;
-import com.college.timetable.model.Subject;
-import com.college.timetable.config.SlotConfig;
 
-import java.util.List;
+import com.college.timetable.model.TimetableSlot;
+import com.college.timetable.config.SlotConfig;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 public class TimetableService {
 
+    // ===== Old Pipeline (Optional) =====
     private final SchedulingPipeline pipeline;
     private final LabSchedulingStage labStage;
     private final TheorySchedulingStage theoryStage;
@@ -38,40 +40,36 @@ public class TimetableService {
         this.slotConfig = slotConfig;
     }
 
-    public List<TimetableSlot> generateFromExcel(MultipartFile file) throws Exception {
-        TimetableRequestDTO request = parseExcel(file);
+    // ======================================================
+    // NEW LOAD-BASED SCHEDULER (Backtracking Solver)
+    // ======================================================
 
-        List<Division> divisions = request.getDivisions().stream()
-                .map(d -> new Division(d.getName()))
-                .toList();
+    public LoadSchedulingResult generateFromExcel(MultipartFile file) throws Exception {
 
-        List<Faculty> faculties = request.getFaculties().stream()
-                .map(f -> new Faculty(
-                        f.getId(),
-                        f.getName(),
-                        new Shift(f.getShiftStart(), f.getShiftEnd())
-                ))
-                .toList();
+        // 1️⃣ Build tasks
+        LoadModelBuilder builder = new LoadModelBuilder();
+        List<SchedulingTask> tasks = builder.buildTasks(file);
 
-        List<Subject> subjects = request.getSubjects().stream()
-                .map(s -> new Subject(
-                        s.getName(),
-                        s.isLab(),
-                        s.getWeeklyHours()
-                ))
-                .toList();
+        // 2️⃣ Solve
+        LoadBacktrackingSolver solver = new LoadBacktrackingSolver(tasks);
+        solver.solve();
 
-        TimetableContext context = new TimetableContext(
-                divisions,
-                faculties,
-                subjects,
-                slotConfig.getAllSlots()
+        LoadSchedulingResult result = new LoadSchedulingResult(
+                solver.getDivisionMatrices(),
+                solver.getFacultyMatrices(),
+                solver.getUnscheduledTasks()
         );
 
-        return generateTimetable(context);
+        return result;
     }
 
+    // ======================================================
+    // OPTIONAL: Old Simple Pipeline Method
+    // ======================================================
+
     public List<TimetableSlot> generateTimetable(TimetableContext context) {
+
+        pipeline.reset();
         pipeline.addStage(labStage);
         pipeline.addStage(theoryStage);
         pipeline.addStage(validationStage);
@@ -79,10 +77,5 @@ public class TimetableService {
         pipeline.execute(context);
 
         return context.getTimetableSlots();
-    }
-
-    private TimetableRequestDTO parseExcel(MultipartFile file) throws Exception {
-        // TODO: Implement Excel parsing logic
-        throw new UnsupportedOperationException("Excel parsing not yet implemented");
     }
 }

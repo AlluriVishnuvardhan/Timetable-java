@@ -12,58 +12,36 @@
 </head>
 <body>
 
-<h2>Automatic Timetable Generator</h2>
+<h2>Automatic Timetable Generator (Load Based)</h2>
 
-<button onclick="generateTimetable()">Generate Timetable</button>
+<input type="file" id="fileInput" />
+<button onclick="uploadFile()">Upload & Generate</button>
 
 <div id="output"></div>
 
 <script>
-async function generateTimetable() {
+async function uploadFile() {
 
-    const requestData = {
-        divisions: [{ name: "A" }],
-        faculties: [{
-            id: 1,
-            name: "Dr. Smith",
-            shiftStart: "09:00",
-            shiftEnd: "16:00"
-        }],
-        subjects: [
-            { name: "Math", lab: false, weeklyHours: 4 },
-            { name: "Physics Lab", lab: true, weeklyHours: 2 }
-        ]
-    };
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
 
-    const response = await fetch("/api/timetable/generate", {
+    if (!file) {
+        alert("Please select an Excel file.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/timetable/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestData)
+        body: formData
     });
 
-    const data = await response.json();
+    const result = await response.text();
 
-    displayTimetable(data);
-}
-
-function displayTimetable(slots) {
-
-    let html = "<table>";
-    html += "<tr><th>Subject</th><th>Faculty</th><th>Day</th><th>Slot</th><th>Time</th></tr>";
-
-    slots.forEach(slot => {
-        html += `<tr>
-                    <td>${slot.subject}</td>
-                    <td>${slot.faculty}</td>
-                    <td>${slot.day}</td>
-                    <td>${slot.slotNumber}</td>
-                    <td>${slot.startTime} - ${slot.endTime}</td>
-                 </tr>`;
-    });
-
-    html += "</table>";
-
-    document.getElementById("output").innerHTML = html;
+    document.getElementById("output").innerHTML =
+        "<h3>" + result + "</h3>";
 }
 </script>
 

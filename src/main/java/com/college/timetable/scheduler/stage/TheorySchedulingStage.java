@@ -50,16 +50,19 @@ public class TheorySchedulingStage implements SchedulingStage {
                 for (Slot slot : allSlots) {
 
                     if (hoursToAllocate <= 0) break;
+                    if (slotAllocationService.isLunchSlot(slot))
+                        continue;
 
                     if (!conflictChecker.isDivisionSlotFree(division, slot))
                         continue;
-
                     String day = slot.getDay();
+                    if (conflictChecker.divisionDailyLimitReached(division, day, 6))
+                        continue;
 
                     int countToday = dayCount.getOrDefault(day, 0);
 
-                    // Max 2 times per day
-                    if (countToday >= 2)
+                    // Same subject should not repeat on same day.
+                    if (countToday >= 1)
                         continue;
 
                     Faculty availableFaculty =
@@ -67,14 +70,20 @@ public class TheorySchedulingStage implements SchedulingStage {
 
                     if (availableFaculty != null) {
 
-                        facultyAllocationService.allocate(availableFaculty, slot);
+                        if (!facultyAllocationService.allocate(availableFaculty, slot)) {
+                            continue;
+                        }
 
-                        slotAllocationService.allocateTheory(
+                        TimetableSlot entry = slotAllocationService.allocateTheory(
                                 division,
                                 slot,
                                 subject,
                                 availableFaculty
                         );
+                        if (entry == null) {
+                            continue;
+                        }
+                        context.getTimetableSlots().add(entry);
 
                         dayCount.put(day, countToday + 1);
 
